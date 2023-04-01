@@ -98,7 +98,6 @@ def get_inform_date(dial):
     # Days from numbers when text month follows
     if day_date := re.search(r"\b\d{1,2}(?=.?\s*(led|únor|břez|květ|červ|srp|zář[ií]|říj|listopad|prosin))\w*\b", dial.user):
         day = int(day_date.group())
-    # Days from numbers when number month follows
     if not day:
         if day_date := re.search(r"\b\d{1,2}((?=\.\s*\d\b)|(?=\.\s*\d{2}\b)|(?=\.?\s+\d\b)|(?=\.?\s+\d{2}\b))", dial.user):
             day = int(day_date.group())
@@ -130,23 +129,22 @@ def get_inform_date(dial):
         month = 11
     elif re.search(r"\bprosin(ec|ce|ci)\b", dial.user):
         month = 12
-    # Year
-    year_date = re.search(r"((?<=\d\.\s)|(?<=\d\.)|(?<=\d\s))\d{4}(?=\b)", dial.user)
-    if year_date:
+    if year_date := re.search(
+        r"((?<=\d\.\s)|(?<=\d\.)|(?<=\d\s))\d{4}(?=\b)", dial.user
+    ):
         year = int(year_date.group())
     # Get the DAI
     if day or month or year:
-        day = day if day else today.day
-        month = month if month else today.month
-        year = year if year else today.year
+        day = day or today.day
+        month = month or today.month
+        year = year or today.year
         value = datetime.datetime(year, month, day).date()
         dial.nlu.append(DAI(intent="inform", slot="date", value=str(value)))
 
 def get_inform_place(dial):
     if (place := re.search(r"(?<=\bv\s)(?!plánu\s)[ěščřžýáíéóúůďťňa-z\s]+?((?=[\?!:,\.\d])|(?=\bod\b)|(?=\bna\b))", dial.user)) or (place := re.search(r"(?<=\bv\s)(?!plánu\s)[ěščřžýáíéóúůďťňa-z\s]+", dial.user)):
         place = place.group()
-        place = lemmatize_string(place)
-        if place:
+        if place := lemmatize_string(place):
             dial.nlu.append(DAI(intent="inform", slot="place", value=place))
             
 def get_inform_repeating(dial):
@@ -176,17 +174,33 @@ def get_inform_time(dial):
             time_start[2] == ':'
         dial.nlu.append(DAI(intent="inform", slot="time_start", value=time_start))
     elif time_start := re.search(r"((?<=\bv\s)|(?<=\bve\s)|(?<=\bod\s))\d{1,2}(?=\s(hodin\s)?ráno\b)", dial.user):
-        dial.nlu.append(DAI(intent="inform", slot="time_start", value=time_start.group()+":00"))
+        dial.nlu.append(
+            DAI(
+                intent="inform",
+                slot="time_start",
+                value=f"{time_start.group()}:00",
+            )
+        )
     elif time_start := re.search(r"((?<=\bv\s)|(?<=\bve\s)|(?<=\bod\s))\d{1,2}(?=\s(hodin\s)?večer\b)", dial.user):
         if (time_start := int(time_start.group())) <= 12:
             time_start = (time_start + 12) % 24
-        dial.nlu.append(DAI(intent="inform", slot="time_start", value=str(time_start)+":00"))
+        dial.nlu.append(
+            DAI(intent="inform", slot="time_start", value=f"{time_start}:00")
+        )
     elif time_start := re.search(r"((?<=\bv\s)|(?<=\bve\s)|(?<=\bod\s))\d{1,2}(?=\s(hodin\s)?odpoledne\b)", dial.user):
         if (time_start := int(time_start.group())) <= 12:
             time_start = (time_start + 12) % 24
-        dial.nlu.append(DAI(intent="inform", slot="time_start", value=str(time_start)+":00"))
+        dial.nlu.append(
+            DAI(intent="inform", slot="time_start", value=f"{time_start}:00")
+        )
     elif time_start := re.search(r"((?<=\bv\s)|(?<=\bve\s)|(?<=\bod\s))\d{1,2}(?=\b)", dial.user):
-        dial.nlu.append(DAI(intent="inform", slot="time_start", value=time_start.group()+":00"))
+        dial.nlu.append(
+            DAI(
+                intent="inform",
+                slot="time_start",
+                value=f"{time_start.group()}:00",
+            )
+        )
     # Parse time of end
     if time_start := re.search(r"(?<=\bdo\s)\d{1,2}(?=\s?)[\s:](?=\s?)\d{2}", dial.user):
         time_start = time_start.group()
@@ -194,16 +208,30 @@ def get_inform_time(dial):
             time_start[2] == ':'
         dial.nlu.append(DAI(intent="inform", slot="time_end", value=time_start))
     elif time_start := re.search(r"(?<=\bdo\s)\d{1,2}(?=\s(hodin\s)?ráno\b)", dial.user):
-        dial.nlu.append(DAI(intent="inform", slot="time_end", value=time_start.group()+":00"))
+        dial.nlu.append(
+            DAI(
+                intent="inform",
+                slot="time_end",
+                value=f"{time_start.group()}:00",
+            )
+        )
     elif time_start := re.search(r"(?<=\bdo\s)\d{1,2}(?=\s(hodin\s)?večer\b)", dial.user):
         if (time_start := int(time_start.group())) <= 12:
             time_start = (time_start + 12) % 24
     elif time_start := re.search(r"(?<=\bdo\s)\d{1,2}(?=\s(hodin\s)?odpoledne\b)", dial.user):
         if (time_start := int(time_start.group())) <= 12:
             time_start = (time_start + 12) % 24
-        dial.nlu.append(DAI(intent="inform", slot="time_end", value=str(time_start)+":00"))
+        dial.nlu.append(
+            DAI(intent="inform", slot="time_end", value=f"{time_start}:00")
+        )
     elif time_start := re.search(r"(?<=\bdo\s)\d{1,2}(?=\b)", dial.user):
-        dial.nlu.append(DAI(intent="inform", slot="time_end", value=time_start.group()+":00"))
+        dial.nlu.append(
+            DAI(
+                intent="inform",
+                slot="time_end",
+                value=f"{time_start.group()}:00",
+            )
+        )
 
 def get_inform_duration(dial):
     minutes, hours = "00", 0
@@ -221,7 +249,13 @@ def get_inform_duration(dial):
         hours = int(hours.group())
     # Create the DAI
     if minutes != "00" or hours:
-        dial.nlu.append(DAI(intent="inform", slot="duration", value=str(hours)+':'+minutes))
+        dial.nlu.append(
+            DAI(
+                intent="inform",
+                slot="duration",
+                value=f'{str(hours)}:{minutes}',
+            )
+        )
 
 def get_inform_name(dial):
     # if something (interpunction, digits, "od, "na") is after name, match as little as possible
@@ -230,22 +264,13 @@ def get_inform_name(dial):
     or (name := re.search(r"(?<=\bv\splánu\spříští\s)[ěščřžýáíéóúůďťňa-z\s]+?((?=[\?!:,\.\d])|(?=\bod\b)|(?=\bna\b))", dial.user)) \
     or (name := re.search(r"(?<=\bv\splánu\s)[ěščřžýáíéóúůďťňa-z\s]+?((?=[\?!:,\.\d])|(?=\bod\b)|(?=\bna\b))", dial.user)):
         pass
-    # if nothing from previous is after name, match as much as possible
-    elif name := re.search(r"(?<=\bpřid[aáe][jtm]\s)[ěščřžýáíéóúůďťňa-z\s]+", dial.user) \
-    or (name := re.search(r"((?<=naplánovat\s)|(?<=naplánuj\s))[ěščřžýáíéóúůďťňa-z\s]+", dial.user)) \
-    or (name := re.search(r"(?<=\bv\splánu\spříští\s)[ěščřžýáíéóúůďťňa-z\s]+", dial.user)) \
-    or (name := re.search(r"(?<=\bv\splánu\s)[ěščřžýáíéóúůďťňa-z\s]+", dial.user)):
-        pass
-    # if name is provided explicitly
-    elif name := re.search(r"(?<=\bnázev\s)|(?<=\bjméno\s)[ěščřžýáíéóúůďťňa-z\s]+", dial.user):
-        pass
     # finish the processing
     if name:
         name = name.group()
         name = re.sub(r"\bmi\b", '', name)
         name = name.replace("zítra",'').replace("dlouhodobě",'').replace("pozítří",'').strip().split()
-        if name:
-            name = ' '.join(name)
-            name = lemmatize_string(name)
-        if name:
-            dial.nlu.append(DAI(intent="inform", slot="name", value=name))
+    if name:
+        name = ' '.join(name)
+        name = lemmatize_string(name)
+    if name:
+        dial.nlu.append(DAI(intent="inform", slot="name", value=name))

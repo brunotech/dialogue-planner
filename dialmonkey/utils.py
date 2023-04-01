@@ -57,13 +57,13 @@ def choose_one(options: List[T], ratios: List[int] = None) -> T:
     :param ratios: optional ratios of probabilities if respective elements are not uniform
     :return: Random element from the provided list
     """
-    if len(options) == 0:
+    if not options:
         return None
     if ratios is None:
         ratios = [1] * len(options)
     assert len(ratios) == len(options), "Ratios should be the same length as options"
-    options = {opt: prob for opt, prob in zip(options, ratios)}
-    return random.choice([opt for opt in options.keys() for _ in range(options[opt])])
+    options = dict(zip(options, ratios))
+    return random.choice([opt for opt in options for _ in range(options[opt])])
 
 
 def dynload_class(path: str) -> Callable:
@@ -73,28 +73,18 @@ def dynload_class(path: str) -> Callable:
     :return: A reference to the class provided or None if not found.
              The operator `()` can be called on the returned value.
     """
-    cls = pydoc.locate(path)
-    return cls
+    return pydoc.locate(path)
 
 
 class dotdict(dict):
 
     def __init__(self, dct=None):
-        if dct is not None:
-            dct = dotdict.transform(dct)
-        else:
-            dct = {}
+        dct = dotdict.transform(dct) if dct is not None else {}
         super(dotdict, self).__init__(dct)
 
     @staticmethod
     def transform(dct):
-        new_dct = {}
-        for k, v in dct.items():
-            if isinstance(v, dict):
-                new_dct[k] = dotdict(v)
-            else:
-                new_dct[k] = v
-        return new_dct
+        return {k: dotdict(v) if isinstance(v, dict) else v for k, v in dct.items()}
 
     __getattr__ = dict.__getitem__
 
@@ -117,6 +107,5 @@ class DialMonkeyFormatter(LogFormatter):
 
     def format(self, record):
         record.relpath = record.pathname.replace(self.path_prefix, '')
-        formatted = super(DialMonkeyFormatter, self).format(record)
-        return formatted
+        return super(DialMonkeyFormatter, self).format(record)
 

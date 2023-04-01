@@ -24,7 +24,9 @@ class DAI(object):
         intn_str = str(self.intent)
         slot_str = '(' + (self.slot if self.slot is not None else '')
         quote = '\'' if (self.value is not None and (' ' in self.value or ':' in self.value)) else ''
-        val_str = (('=' + quote + self.value + quote) if self.value is not None else '') + ')'
+        val_str = (
+            f'={quote}{self.value}{quote}' if self.value is not None else ''
+        ) + ')'
         conf_str = '/%.3f' % self.confidence if self.confidence != 1.0 else ''
         return intn_str + slot_str + val_str + conf_str
 
@@ -32,7 +34,7 @@ class DAI(object):
         return str(self).encode('ascii', errors='replace')
 
     def __repr__(self):
-        return 'DAI.parse("' + str(self) + '")'
+        return f'DAI.parse("{str(self)}")'
 
     def __hash__(self):
         return hash(repr(self))
@@ -69,7 +71,7 @@ class DAI(object):
         conf = 1.0
         if m:
             dai_text = dai_text[:m.start()]
-            conf = float(m.group(1))
+            conf = float(m[1])
         intent, svp = dai_text[:-1].split('(', 1)
 
         if not svp:  # no slot + value (e.g. 'hello()')
@@ -111,7 +113,7 @@ class DA(object):
         return str(self).encode('ascii', errors='xmlcharrefreplace')
 
     def __repr__(self):
-        return 'DA.parse("' + str(self) + '")'
+        return f'DA.parse("{str(self)}")'
 
     def __hash__(self):
         return hash(repr(self))
@@ -124,10 +126,10 @@ class DA(object):
             return NotImplemented
         if len(self.dais) != len(other.dais):
             return False
-        for self_dai, other_dai in zip(self.dais, other.dais):
-            if self_dai != other_dai:
-                return False
-        return True
+        return all(
+            self_dai == other_dai
+            for self_dai, other_dai in zip(self.dais, other.dais)
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -229,10 +231,7 @@ class DA(object):
     def value_for_slot(self, slot):
         """Return the value for the given slot (None if unset or not present at all).
         Uses the first occurrence of this slot if found."""
-        for dai in self.dais:
-            if dai.slot == slot:
-                return dai.value
-        return None
+        return next((dai.value for dai in self.dais if dai.slot == slot), None)
 
     def has_value(self, value):
         """If the DA contains the given value, return the corresponding slot; return None
@@ -241,10 +240,14 @@ class DA(object):
         for dai in self.dais:
             if dai.value == value:
                 return dai.slot
-            if (dai.value is not None and
-                    value not in [None, '?'] and
-                    (re.match(r'.* (and|or) ' + value + r'$', dai.value) or
-                     re.match(r'^' + value + r' (and|or) ', dai.value))):
+            if (
+                dai.value is not None
+                and value not in [None, '?']
+                and (
+                    re.match(f'.* (and|or) {value}$', dai.value)
+                    or re.match(f'^{value} (and|or) ', dai.value)
+                )
+            ):
                 return dai.slot
         return None
 
@@ -265,11 +268,16 @@ class DA(object):
         """
         ret = DA()
         for dai in self:
-            ret_dai = DAI(dai.intent, dai.slot,
-                          'X-' + dai.slot
-                          if (dai.slot in delex_slots and
-                              dai.value not in ['none', None, 'dont_care'])
-                          else dai.value)
+            ret_dai = DAI(
+                dai.intent,
+                dai.slot,
+                f'X-{dai.slot}'
+                if (
+                    dai.slot in delex_slots
+                    and dai.value not in ['none', None, 'dont_care']
+                )
+                else dai.value,
+            )
             ret.append(ret_dai)
         return ret
 
@@ -288,7 +296,7 @@ class DA(object):
             if dai.slot:
                 out += dai.slot
             if dai.value:
-                out += ' = ' + dai.value
+                out += f' = {dai.value}'
         return out
 
     def to_cambridge_da_string(self):
@@ -305,7 +313,7 @@ class DA(object):
                 out += dai.slot
             if dai.value:
                 quote = '\'' if (' ' in dai.value or ':' in dai.value) else ''
-                out += '=' + quote + dai.value + quote
+                out += f'={quote}{dai.value}{quote}'
         out += ')' if out else ''
         return out
 

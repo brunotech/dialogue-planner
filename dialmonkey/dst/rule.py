@@ -13,21 +13,20 @@ class BeliefStateDST(Component):
                 # If current thing in dial.nlu is DialogActItem
                 if isinstance(dai, DAI):
                     intent, slot = dai.intent, dai.slot
-                    dial.state[slot] = dict()
+                    dial.state[slot] = {}
                     dial.state[slot] = dai.value
                     if intent == "task" and slot == "goal":
                         dial.state["goal_"] = dai.value
 
-                # Else it is a dictionary with probabilities
                 else:
                     value_probs = dai
                     info = value_probs.pop("info_")
                     intent, slot = info["intent"], info["slot"]
-                    
+
                     # Initialize given intent-slot pair
-                    if not (intent, slot) in dial.state:
+                    if (intent, slot) not in dial.state:
                         dial.state[(intent, slot)] = {None: 1.0}
-                    
+
                     # Multiply existing probabilities by the probability of None
                     none_prob = float(value_probs.pop(None))
                     for key in dial.state[(intent, slot)]:

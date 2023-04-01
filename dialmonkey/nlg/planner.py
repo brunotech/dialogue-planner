@@ -25,7 +25,7 @@ class PlannerNLG(Component):
     def get_responses(self, dial):
         # Initialize stuff as empty
         responses, event_infos, last_intent = [], [], None
-        to_process, current = dict(), []
+        to_process, current = {}, []
         action_iterator = iter(dial.action)
 
         # Transform informing about events straight to responses
@@ -33,23 +33,23 @@ class PlannerNLG(Component):
         for dai in action_iterator:
             intent = dai.intent
             # Processing information about events
-            if intent == "inform" and (dai.slot == "event_by_name" or dai.slot == "event_by_date"):
-                replacements = dict()
+            if intent == "inform" and dai.slot in [
+                "event_by_name",
+                "event_by_date",
+            ]:
                 values_needed = 5 if dai.slot == "event_by_name" else 4
-                replacements[dai.slot] = None
+                replacements = {dai.slot: None}
                 for _ in range(values_needed):
                     next_dai = next(action_iterator)
                     replacements[next_dai.slot] = next_dai.value
                 response = choice(self.templates["inform"][','.join(replacements.keys())])
                 event_infos.append(response.format(**replacements))
-            # Not information about event, intent different from last -> save
             elif intent != last_intent and current:
                 if intent in to_process:
                     to_process[intent] += current
                 else:
                     to_process[intent] = current
                 current = [dai]
-            # Intent same as last, add to list
             else:
                 current.append(dai)
 
@@ -78,15 +78,13 @@ class PlannerNLG(Component):
             if all_slots in self.templates[intent]:
                 response = choice(self.templates[intent][all_slots])
                 responses.append(response.format(**replacements))
-            # Not found, go through slots one by one, try to match consecutive pairs, if not successfull, match individuals
-            # Trying to match all subsets would be crazy ineffective
             else:
                 processed = False
                 for i in range(1, len(dais)):
-                    prev_item = dais[i-1]
-                    item = dais[i]
                     # If this one is not processed yet
                     if not processed:
+                        prev_item = dais[i-1]
+                        item = dais[i]
                         # Try this one with the previous one in both combinations
                         if (pair := ','.join([prev_item.slot, item.slot])) in self.templates[intent]:
                             response = choice(self.templates[intent][pair])
@@ -99,7 +97,6 @@ class PlannerNLG(Component):
                             response = choice(self.templates[intent][prev_item.slot])
                             processed = False
                         responses.append(response.format(**replacements))
-                    # This one is processed, but the next one not
                     else:
                         processed = False
                 # Process the last one if needed

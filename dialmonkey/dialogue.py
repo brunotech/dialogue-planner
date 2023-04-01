@@ -23,13 +23,19 @@ class Dialogue:
         the nlu and appends to the history.
         :return: None
         """
-        self.history.append({
-            'user': self.user,
-            'system': self.system,
-            'nlu': self.nlu.to_cambridge_da_string() if isinstance(self.nlu, DA) else self.nlu,
-            'action': self.action.to_cambridge_da_string() if isinstance(self.action, DA) else self.action,
-            'state': {k: v for k, v in self.state.items()},
-        })
+        self.history.append(
+            {
+                'user': self.user,
+                'system': self.system,
+                'nlu': self.nlu.to_cambridge_da_string()
+                if isinstance(self.nlu, DA)
+                else self.nlu,
+                'action': self.action.to_cambridge_da_string()
+                if isinstance(self.action, DA)
+                else self.action,
+                'state': dict(self.state.items()),
+            }
+        )
         self.user = ''
         self.system = ''
         self.nlu = DA()
@@ -39,11 +45,15 @@ class Dialogue:
         obj_dict = {
             'system': self.system,
             'user': self.user,
-            'nlu': ('DA', self.nlu.to_cambridge_da_string()) if isinstance(self.nlu, DA) else ('list', self.nlu),
-            'action': ('DA', self.action.to_cambridge_da_string()) if isinstance(self.action, DA) else ('act', self.action),
+            'nlu': ('DA', self.nlu.to_cambridge_da_string())
+            if isinstance(self.nlu, DA)
+            else ('list', self.nlu),
+            'action': ('DA', self.action.to_cambridge_da_string())
+            if isinstance(self.action, DA)
+            else ('act', self.action),
             'eod': self.eod,
-            'state': {k: v for k, v in self.state.items()},
-            'history': self.history
+            'state': dict(self.state.items()),
+            'history': self.history,
         }
         return pickle.dumps(obj_dict)
 
@@ -80,15 +90,14 @@ class Dialogue:
         elif key in ['nlu', 'action']:
             assert isinstance(value, DA), 'Attribute "nlu" has to be a dialmonkey.DA instance.'
         else:
-            assert key not in ['history', 'state'],\
-                'Direct modification of attribute "{}" is not allowed!'.format(key)
+            assert key not in [
+                'history',
+                'state',
+            ], f'Direct modification of attribute "{key}" is not allowed!'
         super(Dialogue, self).__setattr__(key, value)
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
     def __getitem__(self, item):
-        if hasattr(self, item):
-            return getattr(self, item)
-        else:
-            return None
+        return getattr(self, item) if hasattr(self, item) else None

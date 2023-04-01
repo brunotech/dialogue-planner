@@ -52,9 +52,7 @@ class PlainFileInput(FileInput):
 
     def _get(self, *args, **kwargs):
         line = self.input_fd.readline()
-        if line == '':  # EOF hit
-            return None
-        return line.strip().lower()
+        return None if line == '' else line.strip().lower()
 
     def __len__(self):
         return self._len
@@ -79,8 +77,7 @@ class SimpleJSONInput(FileInput):
         return self._len
 
     def get_data_gen(self):
-        for x in self.data:
-            yield x
+        yield from self.data
 
     def _get(self, *args, **kwargs):
         try:

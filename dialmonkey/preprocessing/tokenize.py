@@ -55,7 +55,7 @@ class Tokenizer(Component):
         if self.lowercase:
             text = text.lower()
 
-        toks = ' ' + text + ' '  # for easier regexes
+        toks = f' {text} '
 
         # enforce space around all punct
         toks = regex.sub(r'(([^\p{IsAlnum}\s\.\,−\-])\2*)', r' \1 ', toks)  # all punct (except ,-.)

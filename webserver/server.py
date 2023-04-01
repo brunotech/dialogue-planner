@@ -67,14 +67,14 @@ def process_request():
             dialogues[sessid]["dial"] = dial.serialize()
             dialogues[sessid]["last_used"] = now
 
-            # check all the dialogues, delete older than cca 3 minutes
-            to_delete = []
-            for dial in dialogues:
-                if dialogues[dial]["last_used"] < now - 180:
-                    to_delete.append(dial)
+            to_delete = [
+                dial
+                for dial in dialogues
+                if dialogues[dial]["last_used"] < now - 180
+            ]
             for dial in to_delete:
                 del dialogues[dial]
-            
+
     elif "end_session" in rqst:
         if sessid in dialogues:
             del dialogues[sessid]

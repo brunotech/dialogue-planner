@@ -11,7 +11,7 @@ from dialmonkey.conversation_handler import ConversationHandler
 
 def main(args):
     if not os.path.exists(args.conf):
-        print('Provided configuration file "{}" does not exist! Exiting.'.format(args.conf))
+        print(f'Provided configuration file "{args.conf}" does not exist! Exiting.')
         return
     # load configuration
     conf = load_conf(args.conf)

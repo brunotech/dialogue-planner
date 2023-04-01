@@ -18,8 +18,11 @@ class ConversationHandler(object):
     def __init__(self, config, logger=None, should_continue=None):
         self.config = config
         self.logger = logger if logger is not None else logzero.logger
-        self.history_fn = 'history-{}.json'.format(int(time.time())) \
-            if 'history_fn' not in self.config else self.config['history_fn']
+        self.history_fn = (
+            f'history-{int(time.time())}.json'
+            if 'history_fn' not in self.config
+            else self.config['history_fn']
+        )
         self.should_continue = should_continue if should_continue is not None else lambda _: True
 
         # setup input stream
@@ -84,8 +87,11 @@ class ConversationHandler(object):
             is_ok = False
         system_response = dial['system']
         dial.end_turn()
-        eod = dial.eod or\
-                ('break_words' in self.config and any([kw in user_utterance for kw in self.config['break_words']]))
+        eod = (
+            dial.eod
+            or 'break_words' in self.config
+            and any(kw in user_utterance for kw in self.config['break_words'])
+        )
         return system_response, not is_ok or eod
 
     def run_dialogue(self, dial: Dialogue):

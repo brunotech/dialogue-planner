@@ -5,6 +5,5 @@ def lemmatize_string(input_string: str) -> str:
     response = r.json()["result"]
     lemmas = []
     for sentence in response:
-        for word in sentence:
-            lemmas.append(word["lemma"])
+        lemmas.extend(word["lemma"] for word in sentence)
     return ' '.join(lemmas)
